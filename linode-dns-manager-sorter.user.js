@@ -75,7 +75,7 @@ bullseyelabs.ldms = {
             this.tbody_node.removeChild(this.tbody_node.firstChild);
 
         for (var i=0; i<this.tr_order.length; i++) {
-            var classname = (i % 2 ? 'rowodd' : 'roweven');
+            var classname = (i % 2 ? 'roweven' : 'rowodd');
 
             var tr = this.tr_dict[this.tr_order[i]];
             tr.td.style.textAlign = 'right';
