@@ -4,7 +4,7 @@
 // @description Sorts the master Linode DNS Manager table by descending levels: first by TLD, then by SLD, etc.
 // @include     https://www.linode.com/members/dns/
 // @author      Mike Fogel
-// @version     0.1
+// @version     0.2
 // ==/UserScript==
 
 
