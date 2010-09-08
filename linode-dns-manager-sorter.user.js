@@ -23,25 +23,25 @@ bullseyelabs.ldms = {
 
     /* used as a compare func for ordered_array.sort(cmp_func) */
     domain_cmp: function(dom1, dom2) {
-        var d1p = this.domain_parse(dom1);
-        var d2p = this.domain_parse(dom2);
-        return this.domain_cmp_recurse(d1p, d2p);
-    },
+        /* parse a domain into an array of 'levels' */
+        var domain_parse = function(dom) {
+            var pieces = dom.split('.');
+            pieces.reverse();
+            return pieces;
+        };
 
-    /* recursively compare down 'levels' in the domains */
-    domain_cmp_recurse: function(d1, d2) {
-        if (d1.length == 0 && d2.length == 0) return 0;
-        if (d1.length == 0) return -1;
-        if (d2.length == 0) return 1;
-        if (d1[0] != d2[0]) return (d1[0] < d2[0] ? -1 : 1);
-        return this.domain_cmp_recurse(d1.slice(1), d2.slice(1));
-    },
+        /* recursively compare down 'levels' in the domains */
+        var domain_cmp_recurse = function(d1, d2) {
+            if (d1.length == 0 && d2.length == 0) return 0;
+            if (d1.length == 0) return -1;
+            if (d2.length == 0) return 1;
+            if (d1[0] != d2[0]) return (d1[0] < d2[0] ? -1 : 1);
+            return arguments.callee(d1.slice(1), d2.slice(1));
+        };
 
-    /* parse a domain into an array of 'levels' */
-    domain_parse: function(dom) {
-        var pieces = dom.split('.');
-        pieces.reverse();
-        return pieces;
+        var d1p = domain_parse(dom1);
+        var d2p = domain_parse(dom2);
+        return domain_cmp_recurse(d1p, d2p);
     },
 
     /* parse the html table node */
