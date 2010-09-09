@@ -4,7 +4,7 @@
 // @description Intuitive sorting of Linode DNS Manager tables.
 // @include     https://www.linode.com/members/dns/*
 // @author      Mike Fogel
-// @version     0.2
+// @version     0.3
 // ==/UserScript==
 
 
