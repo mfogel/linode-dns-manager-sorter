@@ -2,7 +2,7 @@
 // @name        Linode DNS Manager Sorter
 // @namespace   http://bullseyelabs.com
 // @description Sorts the master Linode DNS Manager table by descending levels: first by TLD, then by SLD, etc.
-// @include     https://www.linode.com/members/dns/
+// @include     https://www.linode.com/members/dns/*
 // @author      Mike Fogel
 // @version     0.2
 // ==/UserScript==
@@ -76,9 +76,9 @@ bullseyelabs.ldms.cmp = {
 };
 
 /* abstract parent object */
-bullseyelabs.ldms.tsorter = function(cmp_order, cmp_dict)  {
+bullseyelabs.ldms.tsorter = function(cmp_order, cmp_funcs)  {
     this.cmp_order = cmp_order;
-    this.cmp_dict = cmp_dict;
+    this.cmp_funcs = cmp_funcs;
     this.tr_dict = new Object();
     this.tr_order = new Array();
     return this;
@@ -91,11 +91,11 @@ bullseyelabs.ldms.tsorter.prototype = {
     /* do the sort */
     sort_rows: function() {
         var cmp_order = this.cmp_order;
-        var cmp_dict = this.cmp_dict;
+        var cmp_funcs = this.cmp_funcs;
         var cmp_func = function(a, b) {
             for (var i=0; i<cmp_order.length; i++) {
                 var order_key = cmp_order[i];
-                var cur_cmp_func = cmp_dict[order_key];
+                var cur_cmp_func = cmp_funcs[order_key];
                 var r = cur_cmp_func(a[order_key], b[order_key]);
                 if (r != 0) return r;
             }
@@ -118,8 +118,8 @@ bullseyelabs.ldms.tsorter.prototype = {
 },
 
 /* overview tables */
-bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_dict) {
-    var me = new bullseyelabs.ldms.tsorter(cmp_order, cmp_dict);
+bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
+    var me = new bullseyelabs.ldms.tsorter(cmp_order, cmp_funcs);
     me.tbody_node = document.getElementById(table_id).tBodies[0];
 
     me.parse_table = function() {
@@ -162,29 +162,98 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_dict) {
 },
 
 /* detail tables */
-bullseyelabs.ldms.tsorter_detail = function() {
-    // TODO: this.
+bullseyelabs.ldms.tsorter_detail = function(table_tit, cmp_order, cmp_funcs) {
+    var me = new bullseyelabs.ldms.tsorter(cmp_order, cmp_funcs);
+    me.table_title = table_tit;
+
+    me.parse_table = function() {
+
+    };
+
+    me.refresh_table = function() {
+
+    };
+
+    return me;
 };
 
 bullseyelabs.ldms.main = function() {
     /* are we on the overview or detail DNS manager page? */
-    if (window.location.pathname.lastIndexOf('domain_view.cfm') == -1) {
+    if (window.location.pathname.indexOf('domain_view.cfm') == -1) {
+        /* front page */
 
         /* overview table config */
         var overview_table_id = 'tablekit-table-1';
         var overview_cmp_order = new Array('domain');
-        var overview_cmp_dict = {'domain': bullseyelabs.ldms.cmp.domain};
+        var overview_cmp_funcs = {'domain': bullseyelabs.ldms.cmp.domain};
 
-        var ts = new bullseyelabs.ldms.tsorter_overview(
+        new bullseyelabs.ldms.tsorter_overview(
             overview_table_id,
             overview_cmp_order,
-            overview_cmp_dict
-        );
-        ts.run();
+            overview_cmp_funcs
+        ).run();
     }
     else {
-        /* we're on the DNS domain detail page */
-        alert('ur?');
+        /* detail page */
+
+        /* detail table config */
+        var cmp_lib = bullseyelabs.ldms.cmp;
+        var detail_conf = {
+            'SOA Record': {
+                'order': ['Primary DNS', 'Email'],
+                'funcs': {
+                    'Primary DNS': cmp_lib.domain, 
+                    'Email': cmp_lib.alpha,
+                },
+            },
+            'NS Records': {
+                'order': ['Subdomain', 'Name Server'],
+                'funcs': {
+                    'Subdomain': cmp_lib.domain,
+                    'Name Server': cmp_lib.domain,
+                },
+            },
+            'MX Records': {
+                'order': ['Preference', 'Mail Server'],
+                'funcs': {
+                    'Preference': cmp_lib.int,
+                    'Mail Server': cmp_lib.domain,
+                },
+            },
+            'A/AAAA Records': {
+                'order': ['Host Name'],
+                'funcs': {
+                    'Host Name': cmp_lib.domain,
+                },
+            },
+            'CNAME Records': {
+                'order': ['Host Name'],
+                'funcs': {
+                    'Host Name': cmp_lib.domain,
+                },
+            },
+            'TXT Records': {
+                'order': ['Name', 'Value'],
+                'funcs': {
+                    'Name': cmp_lib.domain,
+                    'Value': cmp_lib.alpha,
+                },
+            },
+            /* add something for SRV records here? */
+        };
+
+        for (var k in detail_conf) {
+            alert(k);
+            var table_title = k;
+            var cmp_order = detail_conf[k]['order'];
+            var cmp_funcs = detail_conf[k]['funcs'];
+
+            new bullseyelabs.ldms.tsorter_detail(
+                table_title,
+                cmp_order,
+                cmp_funcs
+            ).run();
+        }
     }
 };
 
