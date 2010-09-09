@@ -57,7 +57,7 @@ bullseyelabs.ldms.cmp = {
         var p1 = ip1.split('.');
         var p2 = ip2.split('.');
         for (var i=0; i<4; i++) {
-            var r = this.int_cmp(p1[i], p2[i]);
+            var r = bullseyelabs.ldms.cmp.int(p1[i], p2[i]);
             if (r != 0) return r;
         }
         return 0;
@@ -68,10 +68,10 @@ bullseyelabs.ldms.cmp = {
         var p1 = e1.split('@');
         var p2 = e2.split('@');
         /* first compare the domains */
-        var r = this.domain_cmp(p1[1], p2[1]);
+        var r = bullseyelabs.ldms.cmp.domain(p1[1], p2[1]);
         if (r != 0) return r;
         /* 2nd go to the usernames */
-        return this.alpha_cmp(p1[0], p2[0]);
+        return bullseyelabs.ldms.cmp.alpha(p1[0], p2[0]);
     },
 };
 
@@ -183,7 +183,12 @@ bullseyelabs.ldms.main = function() {
     }
 };
 
-// TODO: do a 'handleOnLoad' object
-window.addEventListener(
-    'load', function(evt) { bullseyelabs.ldms.main(); }, false);
+/* onload handler */
+bullseyelabs.ldms.onLoadHandler = {
+    handleEvent: function(evt) {
+        bullseyelabs.ldms.main();
+    },
+};
+
+window.addEventListener('load', bullseyelabs.ldms.onLoadHandler, false);
 
