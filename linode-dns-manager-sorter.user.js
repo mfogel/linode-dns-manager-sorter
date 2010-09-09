@@ -76,8 +76,9 @@ bullseyelabs.ldms.cmp = {
 };
 
 /* abstract parent object */
-bullseyelabs.ldms.tsorter = function(cmp_spec)  {
-    this.cmp_spec = cmp_spec;
+bullseyelabs.ldms.tsorter = function(cmp_order, cmp_dict)  {
+    this.cmp_order = cmp_order;
+    this.cmp_dict = cmp_dict;
     this.tr_dict = new Object();
     this.tr_order = new Array();
     return this;
@@ -89,11 +90,12 @@ bullseyelabs.ldms.tsorter.prototype = {
 
     /* do the sort */
     sort_rows: function() {
-        var cmp_spec = this.cmp_spec;
+        var cmp_order = this.cmp_order;
+        var cmp_dict = this.cmp_dict;
         var cmp_func = function(a, b) {
-            for (var i=0; i<cmp_spec.length; i++) {
-                var order_key = cmp_spec[i]['key'];
-                var cur_cmp_func = cmp_spec[i]['func'];
+            for (var i=0; i<cmp_order.length; i++) {
+                var order_key = cmp_order[i];
+                var cur_cmp_func = cmp_dict[order_key];
                 var r = cur_cmp_func(a[order_key], b[order_key]);
                 if (r != 0) return r;
             }
@@ -107,7 +109,6 @@ bullseyelabs.ldms.tsorter.prototype = {
     /* redisplay the table to reflect internal data structs */
     refresh_table: function() { throw "'refresh_table' not impl"; },
 
-
     /* run the object */
     run: function() {
         this.parse_table();
@@ -116,9 +117,9 @@ bullseyelabs.ldms.tsorter.prototype = {
     },
 },
 
-/* type1 tables */
-bullseyelabs.ldms.tsorter_type1 = function(table_id, cmp_spec) {
-    var me = new bullseyelabs.ldms.tsorter(cmp_spec);
+/* overview tables */
+bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_dict) {
+    var me = new bullseyelabs.ldms.tsorter(cmp_order, cmp_dict);
     me.tbody_node = document.getElementById(table_id).tBodies[0];
 
     me.parse_table = function() {
@@ -160,20 +161,24 @@ bullseyelabs.ldms.tsorter_type1 = function(table_id, cmp_spec) {
     return me;
 },
 
-/* type2 tables */
-bullseyelabs.ldms.tsorter_type2 = function() {
+/* detail tables */
+bullseyelabs.ldms.tsorter_detail = function() {
     // TODO: this.
 };
 
 bullseyelabs.ldms.main = function() {
+    /* are we on the overview or detail DNS manager page? */
     if (window.location.pathname.lastIndexOf('domain_view.cfm') == -1) {
-        /* we're on the DNS manager front page */
-        // TODO: move this info to a config area
-        var ts = new bullseyelabs.ldms.tsorter_type1(
-            'tablekit-table-1',
-            new Array(
-                {'key': 'domain', 'func': bullseyelabs.ldms.cmp.domain}
-            )
+
+        /* overview table config */
+        var overview_table_id = 'tablekit-table-1';
+        var overview_cmp_order = new Array('domain');
+        var overview_cmp_dict = {'domain': bullseyelabs.ldms.cmp.domain};
+
+        var ts = new bullseyelabs.ldms.tsorter_overview(
+            overview_table_id,
+            overview_cmp_order,
+            overview_cmp_dict
         );
         ts.run();
     }
