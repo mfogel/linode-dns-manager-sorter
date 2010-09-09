@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Linode DNS Manager Sorter
 // @namespace   http://bullseyelabs.com
-// @description Sorts the master Linode DNS Manager table by descending levels: first by TLD, then by SLD, etc.
+// @description Intuitive sorting of Linode DNS Manager tables.
 // @include     https://www.linode.com/members/dns/*
 // @author      Mike Fogel
 // @version     0.2
@@ -124,6 +124,7 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
 
     me.parse_table = function() {
         var get_domain =  function(tr) {
+            // TODO: change this to use tr.children?
             tr.td = tr.childNodes[1];
             var dom = tr.td.childNodes[1].firstChild.firstChild.wholeText;
             return dom;
@@ -144,8 +145,9 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
     };
 
     me.refresh_table = function() {
-        while (this.tbody_node.firstChild)
+        while (this.tbody_node.firstChild) {
             this.tbody_node.removeChild(this.tbody_node.firstChild);
+        }
 
         for (var i=0; i<this.tr_order.length; i++) {
             var classname = (i % 2 ? 'roweven' : 'rowodd');
@@ -162,15 +164,110 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
 },
 
 /* detail tables */
-bullseyelabs.ldms.tsorter_detail = function(table_tit, cmp_order, cmp_funcs) {
+bullseyelabs.ldms.tsorter_detail = function(title, cmp_order, cmp_funcs) {
     var me = new bullseyelabs.ldms.tsorter(cmp_order, cmp_funcs);
-    me.table_title = table_tit;
+    me.table_title = title;
+
+    /* find our tbody node to operate on. */
+    var parent_div = document.getElementById('page');
+    var tbody_node = null;
+    for (var i=0; i<parent_div.children.length; i++) {
+        var elem = parent_div.children[i];
+        if (elem.tagName != 'TABLE') continue;
+        var tbody_poss = elem.tBodies[0].firstElementChild
+                         .firstElementChild.firstElementChild.tBodies[0];
+        var tc_title_poss = tbody_poss.firstElementChild.firstElementChild;
+        if (tc_title_poss.firstChild.wholeText == title) {
+            tbody_node = tbody_poss;
+            break;
+        }
+    }
+    if (tbody_node === null) {
+        throw "Table with title '" + title + "' not found";
+    }
+    me.tbody_node = tbody_node;
+    me.tr_header = tbody_node.firstElementChild.nextElementSibling;
 
     me.parse_table = function() {
+        var tr_header = this.tr_header;
+        var get_cell_index = function(col_header) {
+            var indx = null;
+            for (var i=0; i<tr_header.children.length; i++) {
+                var td = tr_header.children[i];
+                if (td.firstChild.wholeText == col_header) {
+                    indx = i;
+                    break;
+                }
+            }
+            if (indx === null) {
+                throw "Column with header '" + col_header +"' not found";
+            }
+            return indx;
+        };
+
+        var get_cell_value = function(tr, indx) {
+            var td = tr.children[indx];
+            var val = '';
+            if (td.firstChild != null) {
+                val = td.firstChild.wholeText;
+            }
+            return val;
+        };
+
+        var cell_indexes = new Object();
+        for (var i=0; i<cmp_order.length; i++) {
+            var col_header = cmp_order[i];
+            cell_indexes[col_header] = get_cell_index(col_header);
+        }
+
+        /* skip the green title bar, the header row, and the 'add new' row */
+        for (var i=2; i<this.tbody_node.children.length-1; i++) {
+            var tr = this.tbody_node.children[i];
+            this.tr_dict[i] = tr;
+            var cmp_obj = new Object();
+            for (var j=0; j<cmp_order.length; j++) {
+                var col_header = cmp_order[j];
+                var val = get_cell_value(tr, cell_indexes[col_header]);
+                cmp_obj[col_header] = val;
+            }
+
+            cmp_obj['dict_key'] = i;
+            this.tr_order.push(cmp_obj);
+        }
 
     };
 
     me.refresh_table = function() {
+
+        var set_tr_classname = function(tr, classname) {
+            /* need to push this down to all the td's */
+            tr.className = classname;
+            for (var i=0; i<tr.children.length; i++) {
+                tr.children[i].className = classname;
+            }
+        };
+
+        /* save the 'add new' row, but poss change bgd color  */
+        var tr_add_new = this.tbody_node.lastElementChild;
+        this.tbody_node.removeChild(tr_add_new);
+
+        /* clear all except the green title bar & header rows */
+        while (this.tbody_node.children.length > 2) {
+            this.tbody_node.removeChild(this.tbody_node.lastElementChild);
+        }
+
+        for (var i=0; i<this.tr_order.length; i++) {
+            var classname = (i % 2 ? 'tablenote_alt' : 'tablenote');
+
+            var dict_key = this.tr_order[i]['dict_key'];
+            var tr = this.tr_dict[dict_key];
+            set_tr_classname(tr, classname);
+
+            this.tbody_node.appendChild(tr);
+        }
+        var c = (this.tr_order.length % 2 ? 'tablenote_alt' : 'tablenote');
+        set_tr_classname(tr_add_new, c);
+        this.tbody_node.appendChild(tr_add_new);
 
     };
 
@@ -199,13 +296,6 @@ bullseyelabs.ldms.main = function() {
         /* detail table config */
         var cmp_lib = bullseyelabs.ldms.cmp;
         var detail_conf = {
-            'SOA Record': {
-                'order': ['Primary DNS', 'Email'],
-                'funcs': {
-                    'Primary DNS': cmp_lib.domain, 
-                    'Email': cmp_lib.alpha,
-                },
-            },
             'NS Records': {
                 'order': ['Subdomain', 'Name Server'],
                 'funcs': {
@@ -221,35 +311,29 @@ bullseyelabs.ldms.main = function() {
                 },
             },
             'A/AAAA Records': {
-                'order': ['Host Name'],
+                'order': ['Host Name', 'IP Address'],
                 'funcs': {
                     'Host Name': cmp_lib.domain,
+                    'IP Address': cmp_lib.ipaddr,
                 },
             },
             'CNAME Records': {
-                'order': ['Host Name'],
+                'order': ['Host Name', 'Aliases to'],
                 'funcs': {
                     'Host Name': cmp_lib.domain,
+                    'Aliases to': cmp_lib.domain,
                 },
             },
-            'TXT Records': {
-                'order': ['Name', 'Value'],
-                'funcs': {
-                    'Name': cmp_lib.domain,
-                    'Value': cmp_lib.alpha,
-                },
-            },
-            /* add something for SRV records here? */
+            /* add something for TXT & SRV records here? */
         };
 
         for (var k in detail_conf) {
-            alert(k);
-            var table_title = k;
+            var title = k;
             var cmp_order = detail_conf[k]['order'];
             var cmp_funcs = detail_conf[k]['funcs'];
 
             new bullseyelabs.ldms.tsorter_detail(
-                table_title,
+                title,
                 cmp_order,
                 cmp_funcs
             ).run();
