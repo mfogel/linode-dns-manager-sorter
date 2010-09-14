@@ -4,13 +4,13 @@
 // @description Intuitive sorting of Linode DNS Manager tables.
 // @include     https://www.linode.com/members/dns/*
 // @author      Mike Fogel
-// @version     0.3
+// @version     0.3.1
 // ==/UserScript==
 
 
 /* set up my namespace */
-if (window.bullseyelabs === undefined) bullseyelabs = new Object();
-if (bullseyelabs.ldms === undefined) bullseyelabs.ldms = new Object();
+if (typeof(bullseyelabs) == 'undefined') var bullseyelabs = {};
+if (typeof(bullseyelabs.ldms) == 'undefined') bullseyelabs.ldms = {};
 
 /* a library of comparison funcs */
 bullseyelabs.ldms.cmp = {
