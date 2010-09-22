@@ -2,7 +2,7 @@
 // @name        Linode DNS Manager Sorter
 // @namespace   http://bullseyelabs.com
 // @description Intuitive sorting of Linode DNS Manager tables.
-// @include     https://www.linode.com/members/dns/*
+// @include     https://manager.linode.com/dns*
 // @author      Mike Fogel
 // @version     0.3.1
 // ==/UserScript==
@@ -124,17 +124,14 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
 
     me.parse_table = function() {
         var get_domain =  function(tr) {
-            // TODO: change this to use tr.children?
-            tr.td = tr.childNodes[1];
-            var dom = tr.td.childNodes[1].firstChild.firstChild.wholeText;
+            var link = tr.firstElementChild.firstElementChild;
+            var dom = link.firstChild.wholeText;
             return dom;
         };
 
-        for (var i=0; i<this.tbody_node.childNodes.length; i++) {
-            var elem = this.tbody_node.childNodes[i];
-            if (elem.tagName == undefined ||
-                elem.tagName.toLowerCase() != 'tr') continue;
-                this.tr_dict[i] = elem;
+        for (var i=1; i<this.tbody_node.children.length; i++) {
+            var elem = this.tbody_node.children[i];
+            this.tr_dict[i] = elem;
             var dom = get_domain(elem);
             var tr_val = {
                 'domain': dom,
@@ -145,18 +142,20 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
     };
 
     me.refresh_table = function() {
-        while (this.tbody_node.firstChild) {
-            this.tbody_node.removeChild(this.tbody_node.firstChild);
+        var tbody = this.tbody_node;
+        while (tbody.children.length > 1) {
+            tbody.removeChild(tbody.children[1]);
         }
 
         for (var i=0; i<this.tr_order.length; i++) {
-            var classname = (i % 2 ? 'roweven' : 'rowodd');
+            var classname = 'list_entry ';
+            classname += (i % 2 ? 'roweven' : 'rowodd');
 
             var dict_key = this.tr_order[i]['dict_key'];
             var tr = this.tr_dict[dict_key];
-            tr.td.style.textAlign = 'right';
+            tr.firstElementChild.style.textAlign = 'right';
             tr.className = classname;
-            this.tbody_node.appendChild(tr);
+            tbody.appendChild(tr);
         }
     };
 
@@ -276,7 +275,7 @@ bullseyelabs.ldms.tsorter_detail = function(title, cmp_order, cmp_funcs) {
 
 bullseyelabs.ldms.main = function() {
     /* are we on the overview or detail DNS manager page? */
-    if (window.location.pathname.indexOf('domain_view.cfm') == -1) {
+    if (window.location.pathname.indexOf('/domain/') == -1) {
         /* front page */
 
         /* overview table config */
