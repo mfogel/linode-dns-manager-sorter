@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name        Linode DNS Manager Sorter
 // @namespace   http://bullseyelabs.com
-// @description Intuitive sorting of Linode DNS Manager tables.
+// @description Intuitive sorting of Linode DNS Manager tables - BETA manager only!
 // @include     https://manager.linode.com/dns*
 // @author      Mike Fogel
-// @version     0.3.1
+// @version     0.4
 // ==/UserScript==
 
 
