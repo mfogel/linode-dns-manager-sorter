@@ -173,10 +173,9 @@ bullseyelabs.ldms.tsorter_detail = function(title, cmp_order, cmp_funcs) {
     for (var i=0; i<parent_div.children.length; i++) {
         var elem = parent_div.children[i];
         if (elem.tagName != 'TABLE') continue;
-        var tbody_poss = elem.tBodies[0].firstElementChild
-                         .firstElementChild.firstElementChild.tBodies[0];
-        var tc_title_poss = tbody_poss.firstElementChild.firstElementChild;
-        if (tc_title_poss.firstChild.wholeText == title) {
+        var tbody_poss = elem.tBodies[0];
+        var th = tbody_poss.firstElementChild.firstElementChild;
+        if (th.firstChild.wholeText == title) {
             tbody_node = tbody_poss;
             break;
         }
@@ -238,14 +237,6 @@ bullseyelabs.ldms.tsorter_detail = function(title, cmp_order, cmp_funcs) {
 
     me.refresh_table = function() {
 
-        var set_tr_classname = function(tr, classname) {
-            /* need to push this down to all the td's */
-            tr.className = classname;
-            for (var i=0; i<tr.children.length; i++) {
-                tr.children[i].className = classname;
-            }
-        };
-
         /* save the 'add new' row, but poss change bgd color  */
         var tr_add_new = this.tbody_node.lastElementChild;
         this.tbody_node.removeChild(tr_add_new);
@@ -256,16 +247,14 @@ bullseyelabs.ldms.tsorter_detail = function(title, cmp_order, cmp_funcs) {
         }
 
         for (var i=0; i<this.tr_order.length; i++) {
-            var classname = (i % 2 ? 'tablenote_alt' : 'tablenote');
+            var classname = (i % 2 ? 'list_entry_alt' : 'list_entry');
 
             var dict_key = this.tr_order[i]['dict_key'];
             var tr = this.tr_dict[dict_key];
-            set_tr_classname(tr, classname);
+            tr.className = classname;
 
             this.tbody_node.appendChild(tr);
         }
-        var c = (this.tr_order.length % 2 ? 'tablenote_alt' : 'tablenote');
-        set_tr_classname(tr_add_new, c);
         this.tbody_node.appendChild(tr_add_new);
 
     };
@@ -310,16 +299,16 @@ bullseyelabs.ldms.main = function() {
                 },
             },
             'A/AAAA Records': {
-                'order': ['Host Name', 'IP Address'],
+                'order': ['Hostname', 'IP Address'],
                 'funcs': {
-                    'Host Name': cmp_lib.domain,
+                    'Hostname': cmp_lib.domain,
                     'IP Address': cmp_lib.ipaddr,
                 },
             },
             'CNAME Records': {
-                'order': ['Host Name', 'Aliases to'],
+                'order': ['Hostname', 'Aliases to'],
                 'funcs': {
-                    'Host Name': cmp_lib.domain,
+                    'Hostname': cmp_lib.domain,
                     'Aliases to': cmp_lib.domain,
                 },
             },
