@@ -8,7 +8,7 @@
 // @include     https://manager.linode.com/dns/index/
 // @include     https://manager.linode.com/dns/domain/*
 // @author      Mike Fogel
-// @version     0.5
+// @version     0.5.1
 // ==/UserScript==
 
 
@@ -131,15 +131,15 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
         var tr = this.tbody_node.firstElementChild;
         var th = tr.firstElementChild;
         var th_new = th.cloneNode(true); /* dropping event listeners */
-        this.onMousedownHandler = new me.onMousedownHandlerFactory(this);
+        this.onMousedownHandler = new this.onMousedownHandlerFactory(this);
         th_new.addEventListener('mousedown', this.onMousedownHandler, false);
 
         tr.insertBefore(th_new, th);
         tr.removeChild(th);
 
-        me.parse_table();
-        me.sort_rows();
-        me.onMousedownHandler.handleEvent(null);
+        this.parse_table();
+        this.sort_rows();
+        this.onMousedownHandler.handleEvent(null);
     };
 
     me.onMousedownHandlerFactory = function(par) {
