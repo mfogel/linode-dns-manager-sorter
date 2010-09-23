@@ -1,8 +1,12 @@
 // ==UserScript==
 // @name        Linode DNS Manager Sorter
 // @namespace   http://bullseyelabs.com
-// @description Intuitive sorting of Linode DNS Manager tables - BETA manager only!
-// @include     https://manager.linode.com/dns*
+// @description Intuitive sorting of Linode DNS Manager tables - Beta manager preview only!
+// @include     https://manager.linode.com/dns
+// @include     https://manager.linode.com/dns/
+// @include     https://manager.linode.com/dns/index
+// @include     https://manager.linode.com/dns/index/
+// @include     https://manager.linode.com/dns/domain/*
 // @author      Mike Fogel
 // @version     0.4
 // ==/UserScript==
@@ -121,6 +125,29 @@ bullseyelabs.ldms.tsorter.prototype = {
 bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
     var me = new bullseyelabs.ldms.tsorter(cmp_order, cmp_funcs);
     me.tbody_node = document.getElementById(table_id).tBodies[0];
+    me.sort_incr = -1; /* backwards last time so first time will be normal */
+
+    me.init = function() {
+        var tr = this.tbody_node.firstElementChild;
+        var th = tr.firstElementChild;
+        var th_new = th.cloneNode(true); /* dropping event listeners */
+        this.onMousedownHandler = new me.onMousedownHandlerFactory(this);
+        th_new.addEventListener('mousedown', this.onMousedownHandler, false);
+
+        tr.insertBefore(th_new, th);
+        tr.removeChild(th);
+
+        me.parse_table();
+        me.sort_rows();
+        me.onMousedownHandler.handleEvent(null);
+    };
+
+    me.onMousedownHandlerFactory = function(par) {
+        this.par = par;
+        this.handleEvent = function(evt) {
+            par.refresh_table();
+        };
+    };
 
     me.parse_table = function() {
         var get_domain =  function(tr) {
@@ -147,9 +174,19 @@ bullseyelabs.ldms.tsorter_overview = function(table_id, cmp_order, cmp_funcs) {
             tbody.removeChild(tbody.children[1]);
         }
 
-        for (var i=0; i<this.tr_order.length; i++) {
+        var start = 0;
+        var stop = this.tr_order.length;
+        this.sort_incr *= -1;
+        if (this.sort_incr < 0) {
+            tmp = start;
+            start = stop-1;
+            stop = tmp-1;
+        }
+
+        var iter = 0;
+        for (var i=start; i!=stop; i+=this.sort_incr) {
             var classname = 'list_entry ';
-            classname += (i % 2 ? 'roweven' : 'rowodd');
+            classname += (iter++ % 2 ? 'roweven' : 'rowodd');
 
             var dict_key = this.tr_order[i]['dict_key'];
             var tr = this.tr_dict[dict_key];
@@ -276,7 +313,7 @@ bullseyelabs.ldms.main = function() {
             overview_table_id,
             overview_cmp_order,
             overview_cmp_funcs
-        ).run();
+        ).init();
     }
     else {
         /* detail page */
