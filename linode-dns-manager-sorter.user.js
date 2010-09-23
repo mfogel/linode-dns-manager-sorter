@@ -8,7 +8,7 @@
 // @include     https://manager.linode.com/dns/index/
 // @include     https://manager.linode.com/dns/domain/*
 // @author      Mike Fogel
-// @version     0.4
+// @version     0.5
 // ==/UserScript==
 
 
